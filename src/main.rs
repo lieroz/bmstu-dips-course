@@ -1,47 +1,94 @@
 mod wallet;
 mod config;
 
-use actix_redis::RedisSession;
-use actix_session::Session;
-use actix_web::{web, App, HttpResponse, HttpServer, Result};
+use actix::prelude::*;
+use actix_web::{web, middleware, App, Error as AWError, HttpResponse, HttpServer};
 use listenfd::ListenFd;
 
-use wallet::{Wallet, Currency};
+use actix_redis::{Command, Error as ARError, RedisActor};
+use redis_async::{resp_array, resp::{RespValue, FromResp}};
+
+use wallet::Wallet;
 use config::Config;
 
 use std::sync::Arc;
+use futures::future::Future;
 
-fn create(session: Session) -> Result<HttpResponse> {
+use serde::Deserialize;
+
+fn create(
+    wallet: web::Json<Wallet>,
+    redis: web::Data<Addr<RedisActor>>,
+) -> impl Future<Item = HttpResponse, Error = AWError> {
+    let wallet = wallet.into_inner();
+    redis.send(Command(
+        resp_array!["HMSET", wallet.get_owner(),
+            "balance", wallet.get_balance().to_string(),
+            "currency", wallet.get_currency()])
+        )
+        .map_err(AWError::from)
+        .and_then(|res: Result<RespValue, ARError>| match &res {
+            Ok(RespValue::SimpleString(x)) if x == "OK" => {
+                Ok(HttpResponse::Ok().body("success"))
+            }
+            _ => {
+                Ok(HttpResponse::InternalServerError().finish())
+            }
+        })
+}
+
+fn read(
+    owner: web::Path<String>,
+    redis: web::Data<Addr<RedisActor>>,
+) -> impl Future<Item = HttpResponse, Error = AWError> {
+    let owner = owner.into_inner();
+    redis.send(Command(
+            resp_array!["HMGET", &owner, "balance", "currency"])
+        )
+        .map_err(AWError::from)
+        .and_then(|res: Result<RespValue, ARError>| match &res {
+            Ok(RespValue::Array(resps)) => {
+                let wallet = Wallet::new(owner,
+                    String::from_resp(resps[0].clone()).unwrap().parse::<u64>().unwrap(),
+                    String::from_resp(resps[1].clone()).unwrap());
+                Ok(HttpResponse::Ok().json(wallet))
+            }
+            _ => {
+                Ok(HttpResponse::InternalServerError().finish())
+            }
+        })
+
+}
+/*
+fn update() -> impl Future<Item = HttpResponse, Error = AWError> {
     Ok(HttpResponse::Ok().json(Wallet::new("wallet", 300, Currency::Rouble)))
 }
 
-fn read(session: Session) -> Result<HttpResponse> {
+fn delete() -> impl Future<Item = HttpResponse, Error = AWError> {
     Ok(HttpResponse::Ok().json(Wallet::new("wallet", 300, Currency::Rouble)))
 }
-
-fn update(session: Session) -> Result<HttpResponse> {
-    Ok(HttpResponse::Ok().json(Wallet::new("wallet", 300, Currency::Rouble)))
-}
-
-fn delete(session: Session) -> Result<HttpResponse> {
-    Ok(HttpResponse::Ok().json(Wallet::new("wallet", 300, Currency::Rouble)))
-}
-
+*/
 fn main() {
     let config = Arc::new(Config::new("/home/lieroz/bmstu-dips-course/config.yaml").unwrap());
-    let thrConfig = config.clone();
+    let thr_config = config.clone();
+
+    std::env::set_var("RUST_LOG", "actix_web=debug,actix_redis=debug");
+    env_logger::init();
 
     let mut listenfd = ListenFd::from_env();
     let mut server = HttpServer::new(move || {
+        let redis_addr = format!("{}:{}", thr_config.get_redis_host(),
+                thr_config.get_redis_port());
+
         App::new()
-            .wrap(RedisSession::new(format!("{}:{}", thrConfig.get_redis_host(),
-                thrConfig.get_redis_port()), &[0; 32]))
+            .data(RedisActor::start(redis_addr))
+            .wrap(middleware::Logger::default())
             .service(
                 web::scope("/api/wallet")
-                    .route("/create", web::post().to(create))
-                    .route("/read", web::get().to(read))
-                    .route("/update", web::put().to(update))
-                    .route("/delete", web::delete().to(delete))
+                    .route("/create", web::post().to_async(create))
+                    .route("/read/{owner}", web::get().to_async(read))
+                    //.route("/update/{wallet}", web::put().to(update))
+                    //.route("/delete/{wallet}", web::delete().to(delete))
             )
             .route("/", web::get().to(|| "Hello, World!"))
     })

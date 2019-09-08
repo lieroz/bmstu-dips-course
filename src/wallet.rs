@@ -1,26 +1,29 @@
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize)]
-pub enum Currency {
-    Rouble,
-    Dollar,
-    Euro,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Wallet<'a> {
-    owner: &'a str,
+pub struct Wallet {
+    owner: String,
     balance: u64,
-    currency: Currency,
+    currency: String,
 }
 
-impl<'a> Wallet<'a> {
-    pub fn new(owner: &'a str, balance: u64, currency: Currency) -> Wallet<'a>
-    {
-        Wallet {
+impl Wallet {
+    pub fn new(owner: String, balance: u64, currency: String) -> Wallet {
+        Wallet{
             owner,
             balance,
-            currency
+            currency,
         }
+    }
+    pub fn get_owner(&self) -> String {
+        self.owner.clone()
+    }
+
+    pub fn get_balance(&self) -> u64 {
+        self.balance
+    }
+
+    pub fn get_currency(&self) -> String {
+        self.currency.clone()
     }
 }
