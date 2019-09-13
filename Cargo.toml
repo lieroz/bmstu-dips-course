@@ -1,20 +1,6 @@
-[package]
-name = "bmstu-dips-course"
-version = "0.1.0"
-authors = ["Kamakin Andrey <a.kamakin@icloud.com>"]
-edition = "2018"
+[workspace]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-actix = "0.8"
-actix-web = "1.0"
-actix-session = "0.2.0"
-actix-redis = "0.6"
-redis-async = "0.4"
-listenfd = "0.3"
-serde = "1.0.100"
-serde_json = "1.0.40"
-yaml-rust = "0.4"
-env_logger = "0.6"
-futures = "0.1"
+members = [
+    "auth_server",
+    "application_server",
+]
