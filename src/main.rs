@@ -1,5 +1,9 @@
 use actix::prelude::*;
-use actix_web::{error, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{
+    error, web, App,
+    Error, HttpResponse, HttpServer,
+    middleware::Logger,
+};
 use actix_redis::{Command, RedisActor};
 use redis_async::{resp_array, resp::RespValue};
 use futures::{future, Future};
@@ -130,9 +134,19 @@ fn read_task(
         )
 }
 
+#[derive(Serialize, Deserialize)]
+struct UpdateTask {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    author: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
+}
+
 fn update_task(
     info: web::Path::<(String,)>,
-    task: web::Json<Task>,
+    task: web::Json<UpdateTask>,
     redis: web::Data<Addr<RedisActor>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let id = info.0.clone();
@@ -151,37 +165,43 @@ fn update_task(
 
                 future::err(error::ErrorInternalServerError(""))
             }
-            _ => future::ok(HttpResponse::InternalServerError().finish())
+            _ => future::ok(HttpResponse::InternalServerError().finish()),
         })
         .or_else(move |_| {
-                let task = task.into_inner();
-                let mut data = vec![];
+            let task = task.into_inner();
+            let mut data = vec![];
 
-                if !task.title.is_empty() {
-                    data.push("title");
-                    data.push(&task.title);
-                };
+            if let Some(title) = task.title {
+                if !title.is_empty() {
+                    data.push("title".to_owned());
+                    data.push(title);
+                }
+            };
 
-                if !task.author.is_empty() {
-                    data.push("author");
-                    data.push(&task.author);
-                };
+            if let Some(author) = task.author {
+                if !author.is_empty() {
+                    data.push("author".to_owned());
+                    data.push(author);
+                }
+            }
 
-                if !task.description.is_empty() {
-                    data.push("description");
-                    data.push(&task.description);
-                };
+            if let Some(description) = task.description {
+                if !description.is_empty() {
+                    data.push("description".to_owned());
+                    data.push(description);
+                }
+            }
 
-                redis
-                    .send(Command(resp_array![
-                        "HMSET",
-                        &info.0
-                    ].append(&mut data)))
-                    .from_err()
-                    .and_then(move |res| match &res {
-                        Ok(RespValue::SimpleString(x)) if x == "OK" => future::ok(HttpResponse::Ok().finish()),
-                        _ => future::ok(HttpResponse::InternalServerError().finish())
-                    })
+            redis
+                .send(Command(resp_array![
+                    "HMSET",
+                    &info.0
+                ].append(&mut data)))
+                .from_err()
+                .and_then(move |res| match &res {
+                    Ok(RespValue::SimpleString(x)) if x == "OK" => future::ok(HttpResponse::Ok().finish()),
+                    _ => future::ok(HttpResponse::InternalServerError().finish()),
+                })
         })
 }
 
@@ -189,9 +209,14 @@ fn main() {
     let redis_url = env::var("REDIS_URL")
         .expect("error reading REDIS_URL from env");
 
+    env::set_var("RUST_LOG", "actix_web=info");
+    env_logger::init();
+
     let mut listenfd = ListenFd::from_env();
     let mut server = HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
+            .wrap(Logger::new("%a %{User-Agent}i"))
             .data(RedisActor::start(&redis_url))
             .route("/create_task", web::post().to_async(create_task))
             .route("/read_task/{id}", web::get().to_async(read_task))
