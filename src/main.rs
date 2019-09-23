@@ -205,6 +205,31 @@ fn update_task(
         })
 }
 
+fn delete_task(
+    info: web::Path::<(String,)>,
+    redis: web::Data<Addr<RedisActor>>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let info = info.into_inner();
+    redis
+        .send(Command(resp_array![
+            "DEL",
+            &info.0
+        ]))
+        .from_err()
+        .and_then(move |res| match &res {
+            Ok(RespValue::Integer(x)) => {
+                if *x == 0 {
+                    return future::ok(HttpResponse::NotFound().json(
+                        Message{ message: format!("Task with id '{}' wasn't found", info.0) }));
+                }
+
+                future::ok(HttpResponse::Ok().json(
+                    Message{ message: format!("Task with id '{}' was deleted", info.0) }))
+            }
+            _ => future::ok(HttpResponse::InternalServerError().finish()),
+        })
+}
+
 fn main() {
     let redis_url = env::var("REDIS_URL")
         .expect("error reading REDIS_URL from env");
@@ -221,6 +246,7 @@ fn main() {
             .route("/create_task", web::post().to_async(create_task))
             .route("/read_task/{id}", web::get().to_async(read_task))
             .route("/update_task/{id}", web::put().to_async(update_task))
+            .route("/delete_task/{id}", web::delete().to_async(delete_task))
     });
 
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
