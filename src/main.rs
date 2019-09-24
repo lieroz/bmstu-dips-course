@@ -231,6 +231,8 @@ fn delete_task(
 }
 
 fn main() {
+    let port = env::var("PORT")
+        .expect("error reading PORT from env");
     let redis_url = env::var("REDIS_URL")
         .expect("error reading REDIS_URL from env");
 
@@ -253,7 +255,7 @@ fn main() {
         server.listen(l).unwrap()
     } else {
         server.workers(4)
-            .bind(format!("0.0.0.0:8080"))
+            .bind(format!("0.0.0.0:{}", port))
             .unwrap()
     };
 
