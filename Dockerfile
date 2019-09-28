@@ -5,4 +5,4 @@ COPY . .
 
 RUN cargo install --path .
 
-CMD ["bmstu-dips-course"]
+CMD ["crud"]
