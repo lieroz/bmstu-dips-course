@@ -15,12 +15,12 @@ script:
   - cargo test --verbose
 
 after_script:
-  - docker build -t bmstu/dips .
+  - docker build -t "$REGISTRY_USER"/bmstu-dips .
 
 before_deploy:
-  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
+  - echo "$REGISTRY_PASS" | docker login -u "$REGISTRY_USER" --password-stdin
 deploy:
   provider: script
-  script: docker push bmstu/dips
+  script: docker push "$REGISTRY_USER"/bmstu-dips
   on:
     branch: feature/lab-1
