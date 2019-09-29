@@ -22,4 +22,4 @@ deploy:
   script: docker push "$REGISTRY_USER"/bmstu-dips:v1
   on:
     all_branches: true
-    condition: ^(master|feature\/.+)$
+    condition: $TRAVIS_BRANCH =~ ^(master|feature\/.+)$
