@@ -15,14 +15,13 @@ script:
   - cargo test --verbose
 
 after_script:
-  - docker images
-  - docker rmi -f $(docker images -a -q)
-  - docker build -t lieroz/bmstu-dips .
+  - docker build -t bmstu-dips .
+  - docker tag bmstu-dips lieroz/bmstu-dips:v1
 
 before_deploy:
   - echo "$REGISTRY_PASS" | docker login -u "$REGISTRY_USER" --password-stdin
 deploy:
   provider: script
-  script: docker push lieroz/bmstu-dips
+  script: docker push lieroz/bmstu-dips:v1
   on:
     branch: feature/lab-1
