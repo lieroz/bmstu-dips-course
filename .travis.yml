@@ -20,5 +20,6 @@ after_script:
 before_deploy:
   - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
 deploy:
+  all_branches: true
   provider: script
   script: docker push bmstu/dips
