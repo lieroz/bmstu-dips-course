@@ -7,9 +7,10 @@ sudo: required
 services:
   - redis-server
   - docker
+
 env:
   global:
-    - IMAGE_NAME="$REGISTRY_USER"/bmstu-dips
+    - IMAGE_NAME="${REGISTRY_USER}/bmstu-dips"
 
 cache: cargo
 
