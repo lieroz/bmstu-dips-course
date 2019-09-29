@@ -22,5 +22,5 @@ before_deploy:
 deploy:
   provider: script
   script: docker push bmstu/dips
-  all_branches: true
-  condition: $TRAVIS_BRANCH =~ ^(master|feature/lab-1)$
+  on:
+    branch: feature/lab-1
