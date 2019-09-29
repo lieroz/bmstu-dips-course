@@ -2,11 +2,23 @@ language: rust
 rust:
   - stable
 
+sudo: required
+
 services:
   - redis-server
+  - docker
 
 cache: cargo
 
 script:
   - cargo build --verbose
   - cargo test --verbose
+
+after_script:
+  - docker build -t bmstu/dips .
+
+before_deploy:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
+deploy:
+  provider: script
+  script: docker push bmstu/dips
