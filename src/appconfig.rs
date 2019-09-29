@@ -1,10 +1,14 @@
-use actix_web::web;
+use actix_web::{web, HttpResponse};
 
 use crate::handlers::tasks::*;
 
 pub fn config_app(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("")
+            .service(
+                web::resource("/")
+                    .route(web::get().to(|| HttpResponse::Ok())),
+            )
             .service(
                 web::resource("/create_task")
                     .route(web::post().to_async(create_task)),

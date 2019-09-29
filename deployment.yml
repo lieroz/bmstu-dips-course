@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: crud
+  labels: 
+    name: "crud"
+    # force policy will ensure that deployment is updated
+    # even when tag is unchanged (latest remains)
+    keel.sh/policy: force
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: crud
+  template:
+    metadata:
+      name: crud
+      labels:
+        app: crud
+    spec:     
+      containers:                    
+        - image: lieroz/bmstu-dips:latest
+          imagePullPolicy: Always # this is required to force pull image     
+          name: crud
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
