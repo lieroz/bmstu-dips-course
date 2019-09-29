@@ -16,9 +16,10 @@ script:
 
 before_deploy:
   - echo "$REGISTRY_PASS" | docker login -u "$REGISTRY_USER" --password-stdin
-  - docker build -t lieroz/bmstu-dips:v1 .
+  - docker build -t "$REGISTRY_USER"/bmstu-dips:v1 .
 deploy:
   provider: script
-  script: docker push lieroz/bmstu-dips:v1
+  script: docker push "$REGISTRY_USER"/bmstu-dips:v1
   on:
-    branch: feature/lab-1
+    all_branches: true
+    condition: ^(master|feature\/.+)$
