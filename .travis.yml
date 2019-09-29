@@ -7,6 +7,9 @@ sudo: required
 services:
   - redis-server
   - docker
+env:
+  global:
+    - IMAGE_NAME="$REGISTRY_USER"/bmstu-dips
 
 cache: cargo
 
@@ -16,10 +19,12 @@ script:
 
 before_deploy:
   - echo "$REGISTRY_PASS" | docker login -u "$REGISTRY_USER" --password-stdin
-  - docker build -t "$REGISTRY_USER"/bmstu-dips:v1 .
+  - docker pull "$IMAGE_NAME" || true
+  - docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" .
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
 deploy:
   provider: script
-  script: docker push "$REGISTRY_USER"/bmstu-dips:v1
+  script: docker push "${IMAGE_NAME}:latest"
   on:
     all_branches: true
     condition: $TRAVIS_BRANCH =~ ^(master|feature\/.+)$
