@@ -14,12 +14,9 @@ script:
   - cargo build --verbose
   - cargo test --verbose
 
-after_script:
-  - docker build -t bmstu-dips .
-  - docker tag bmstu-dips lieroz/bmstu-dips:v1
-
 before_deploy:
   - echo "$REGISTRY_PASS" | docker login -u "$REGISTRY_USER" --password-stdin
+  - docker build -t lieroz/bmstu-dips:v1 .
 deploy:
   provider: script
   script: docker push lieroz/bmstu-dips:v1
