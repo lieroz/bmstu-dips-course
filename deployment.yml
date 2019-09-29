@@ -23,6 +23,11 @@ spec:
         - image: lieroz/bmstu-dips:latest
           imagePullPolicy: Always # this is required to force pull image     
           name: crud
+          env:
+            - name: PORT
+              value: "8080"
+            - name: REDIS_URL
+              value: "172.17.0.8:6379"
           ports:
             - containerPort: 8080
           livenessProbe:
