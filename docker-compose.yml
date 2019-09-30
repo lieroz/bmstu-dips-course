@@ -6,7 +6,8 @@ services:
       - redis
     environment:
       - PORT=8080
-      - REDIS_URL=redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     ports:
       - "8080:8080"
   redis:

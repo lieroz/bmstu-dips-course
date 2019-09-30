@@ -8,8 +8,10 @@ use bmstu_dips_course::appconfig::config_app;
 fn main() {
     let port = env::var("PORT")
         .expect("error reading PORT from env");
-    let redis_url = env::var("REDIS_URL")
-        .expect("error reading REDIS_URL from env");
+    let redis_host = env::var("REDIS_HOST")
+        .expect("error reading REDIS_HOST from env");
+    let redis_port = env::var("REDIS_PORT")
+        .expect("error reading REDIS_PORT from env");
 
     env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
@@ -20,7 +22,7 @@ fn main() {
             .configure(config_app)
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
-            .data(RedisActor::start(&redis_url))
+            .data(RedisActor::start(format!("{}:{}", redis_host, redis_port)))
     });
 
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
