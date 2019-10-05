@@ -19,12 +19,10 @@ script:
   - cargo test --verbose
 
 before_deploy:
-  if [[ "$TRAVIS_BRANCH" == "master" ]]; then
-    echo "$REGISTRY_PASS" | docker login -u "$REGISTRY_USER" --password-stdin &&
-    docker pull "$IMAGE_NAME" || true &&
-    docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" . &&
-    docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
-  fi
+  - echo "$REGISTRY_PASS" | docker login -u "$REGISTRY_USER" --password-stdin
+  - docker pull "$IMAGE_NAME" || true
+  - docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" .
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
 
 deploy:
   provider: script
