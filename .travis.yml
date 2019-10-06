@@ -10,7 +10,7 @@ services:
 
 env:
   global:
-    - IMAGE_NAME="${REGISTRY_USER}/bmstu-dips"
+    - IMAGE_NAME="${REGISTRY_USER}/rsoi-lab1"
 
 cache: cargo
 

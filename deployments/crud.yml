@@ -20,7 +20,7 @@ spec:
         app: crud
     spec:     
       containers:                    
-        - image: lieroz/bmstu-dips:latest
+        - image: lieroz/rsoi-lab1:latest
           imagePullPolicy: Always # this is required to force pull image     
           name: crud
           env:
