@@ -3,7 +3,7 @@ use actix_redis::{RedisActor};
 use listenfd::ListenFd;
 use std::env;
 
-use bmstu_dips_course::appconfig::config_app;
+use rsoi_lab1::appconfig::config_app;
 
 fn main() {
     let port = env::var("PORT")

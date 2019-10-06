@@ -1,5 +1,5 @@
 [package]
-name = "bmstu-dips-course"
+name = "rsoi-lab1"
 version = "0.1.0"
 authors = ["Kamakin Andrey <a.kamakin@icloud.com>"]
 edition = "2018"
